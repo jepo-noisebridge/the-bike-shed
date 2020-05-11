@@ -16,9 +16,9 @@ EOF
   source /etc/profile
 }; fi
 
-
+# rm -f /etc/apt/sources.list.d/shed.list  # for debugging
 apt update
-apt install -y gnupg
+apt install -y gnupg ca-certificates
 apt-key add - << EOF
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.12 (GNU/Linux)
@@ -75,12 +75,19 @@ bXb5c6gCHESH5PXwPU4jQEE7Ib9J6sbk7ZT2Mw==
 EOF
 
 echo "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-10 main" > /etc/apt/sources.list.d/shed.list
-apt update
+apt update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/shed.list -o APT::Get::List-Cleanup="0"
 apt upgrade -y
 apt install -y build-essential wget unar libtinfo5 \
-        ninja-build git clangd-10 clang-10 lld-10 lldb-10
-
+        ninja-build git clangd-10 clang-10 lld-10 lldb-10 \
+        libncurses5-dev bzr cvs mercurial subversion unzip bc
 
 for i in clangd clang lld lldb; do {
   ln -sfv $i-10 /usr/bin/$i
 }; done
+
+
+# This is to try to prevent the annoying "host verifcation failed" message on fresh dockers...
+mkdir -p ~/.ssh/; chmod og=,u=rwx ~/.ssh/
+cat << EOF >> ~/.ssh/known_hosts
+github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
+EOF
